@@ -22,3 +22,9 @@
 .eqv TABLE_PEDIDO 64 #160 Bytes for the pedido
 .eqv TABLE_SIZE 224 # 224 Bytes for the whole object
 
+
+.data
+    menus: .space 800      # 20 items * 40 bytes
+    tables:    .space 3360     # 15 tables * 224 bytes
+    banner:   .asciiz "restaurant-shell>> "
+    
