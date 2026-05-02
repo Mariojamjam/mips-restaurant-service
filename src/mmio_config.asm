@@ -60,7 +60,8 @@ read_str_loop:
 	addi $t3, $t3, -1
 	#Branches if $t3 > 0, restarts the loop
 	bgtz $t3, read_str_loop
-	
+
+#Ending the read string function
 read_str_end:
 	#Stores the $0 byte as the end of the string
 	sb $0, 0($t2)
@@ -68,10 +69,13 @@ read_str_end:
 	lw    $ra, 0($sp)
 	#Closes the stack
     	addi $sp, $sp, 4
+    	#Jump back to main loop
     	jr    $ra
     	
     	
 #---- PRINT STRING FUNCTIONS---
+
+#Function that prints strings by calling print_char_mmio in a loop
 print_str_mmio:
 	#Create space in the stack
 	addi $sp, $sp, -4
@@ -79,20 +83,29 @@ print_str_mmio:
 	sw $ra, 0($sp)
 	#Stores the string address in argument register
 	move $t2, $a0
-	
+
+#Main print string loop
 print_str_loop:
-	
+	#Load the current byte from the string
 	lb $t3, 0($t2)
+	#Branches if the byte is the null terminator ($0)
 	beq $t3, $0, prnt_str_end
+	#Move the char to $a0 to be printed
 	move $a0, $t3
+	#Uses the print_char_mmio to display the char
 	jal print_char_mmio
+	#Adds 1 to go to the next char in the string
 	addi $t2, $t2, 1
+	#Restart the loop
 	j print_str_loop
 	
-	
+#Ending the print string function
 prnt_str_end:
+	#Loads the return adress from the stack
 	lw    $ra, 0($sp)
+	#Closes the stack
     	addi $sp, $sp, 4
+    	#Jump back to main loop
     	jr    $ra
 
 
