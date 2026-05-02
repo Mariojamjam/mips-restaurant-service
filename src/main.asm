@@ -1,6 +1,6 @@
 .include "data.asm"
 .include "entry.asm"
-.include "mmio-config.asm" 
+.include "mmio_config.asm" 
 
 
 main:
