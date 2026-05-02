@@ -1,31 +1,36 @@
- 
- #---- READ/DISPLAY CHAR FUNCTIONS ----
+#---- READ/DISPLAY CHAR FUNCTIONS ----
  
  #Function that verifies the keyboard input
 read_char_mmio:
-	#Loading Keyboard Address
-        lw $t0, KEYBOARD_CONTROL
-        #Checking if the least significative number is 1. The leas significative number is used to define if theres is an input in terminal.
+	#Loading Keyboard Control Address
+	li $t0, KEYBOARD_CONTROL
+	#Reading the control register content
+	lw $t0, 0($t0)
+	#Checking if the least significative number is 1. The leas significative number is used to define if theres is an input in terminal.
         andi $t1, $t0, 1
         #While loop checking if an input has been entered.
         beq $t1, $0, read_char_mmio
-
+        #Loading Keyboard Data Address
+        li $t0, KEYBOARD_DATA
         #Load the keybodard data for future use in $v0
-        lw $v0, KEYBOARD_DATA
+        lw $v0, 0($t0)
         #Jump back to main loop
         jr $ra
 
 #Function that prints keyboard input    
 print_char_mmio:
-        #Loading Display Address
-        lw $t0, DISPLAY_CONTROL
+        #Loading Display Control Address
+        li $t0, DISPLAY_CONTROL
+        #Reading the control register content
+        lw $t1, 0($t0)
         #Checking if the least significative number is 1. The leas significative number is used to define if theres is an input in terminal.    
-        andi $t1, $t0, 1
+        andi $t1, $t1, 1
         #While loop checking if an input has been entered.
 	beq $t1, $0, print_char_mmio
-
+	#Loading Display Data Address
+	li $t0, DISPLAY_DATA
 	#Storing display data to show on the screen.
-	sw $a0, DISPLAY_DATA
+	sw $a0, 0($t0)
 	#Jump back to main loop
 	jr $ra 
     
@@ -44,7 +49,7 @@ read_str_mmio:
 	li $t3, BUFFER_SIZE
 	#Loads the char "\n" char, (Identifies ENTER input)
 	li  $t4, 0xA # "\n char hardcoded"
-
+	
 #Main read string loop
 read_str_loop:
 	#Uses the read_char_mmio to read the char and store it in the $v0 register
@@ -60,7 +65,7 @@ read_str_loop:
 	addi $t3, $t3, -1
 	#Branches if $t3 > 0, restarts the loop
 	bgtz $t3, read_str_loop
-
+	
 #Ending the read string function
 read_str_end:
 	#Stores the $0 byte as the end of the string
@@ -83,7 +88,7 @@ print_str_mmio:
 	sw $ra, 0($sp)
 	#Stores the string address in argument register
 	move $t2, $a0
-
+	
 #Main print string loop
 print_str_loop:
 	#Load the current byte from the string
@@ -107,6 +112,3 @@ prnt_str_end:
     	addi $sp, $sp, 4
     	#Jump back to main loop
     	jr    $ra
-
-
-
