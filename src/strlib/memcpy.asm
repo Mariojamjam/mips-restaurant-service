@@ -1,3 +1,6 @@
+#Copies exactly num bytes from source to destination
+#Does not check for null terminators
+#$a0 = destination, $a1 = source, $a2 = num, $v0 = destination
 memcpy:
         #Copy destination address to temp pointer
         move $t0, $a0

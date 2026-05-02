@@ -1,3 +1,6 @@
+#Appends source to the end of destination
+#Replaces destination null terminator with first char of source
+#$a0 = destination, $a1 = source, $v0 = destination
 strcat:
         #Copy destination address to temp pointer
         move $t0, $a0

@@ -1,3 +1,6 @@
+#Compares up to num characters of two strings
+#Returns 0 if equal, negative or positive if different
+#$a0 = str1, $a1 = str2, $a3 = num, $v0 = result
 strncmp:
         #If num == 0, return 0 immediately
         beq $a3, $zero, strncmp_equal

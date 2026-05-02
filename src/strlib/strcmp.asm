@@ -1,3 +1,6 @@
+#Compares two strings character by character
+#Returns 0 if equal, negative or positive if different
+#$a0 = str1, $a1 = str2, $v0 = result
 strcmp:
 strcmp_loop:
         #Load current byte from str1

@@ -1,3 +1,6 @@
+#Copies a string from source to destination
+#Includes the null terminator ('\0')
+#$a0 = destination, $a1 = source, $v0 = destination
 strcpy:
         #Copy destination address to temp pointer
         move $t0, $a0
