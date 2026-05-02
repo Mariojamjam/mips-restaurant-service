@@ -22,9 +22,21 @@
 .eqv TABLE_PEDIDO 64 #160 Bytes for the pedido
 .eqv TABLE_SIZE 224 # 224 Bytes for the whole object
 
+# MMIO Addresses
+.eqv KEYBOARD_CONTROL 0xffff0000  # Status: bit 0 is "1" when a new key is available
+.eqv KEYBOARD_DATA    0xffff0004  # Data: contains the ASCII code of the pressed key
+.eqv DISPLAY_CONTROL  0xffff0008  # Status: bit 0 is "1" when ready to display
+.eqv DISPLAY_DATA     0xffff000c  # Data: where you write the character to be displayed
+
+#define buffers size
+.eqv BUFFER_SIZE 256
+
 
 .data
     menus: .space 800      # 20 items * 40 bytes
     tables:    .space 3360     # 15 tables * 224 bytes
+
+    buffer_space: .space BUFFER_SIZE
     banner:   .asciiz "restaurant-shell>> "
+    
     
