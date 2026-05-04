@@ -33,10 +33,14 @@
 
 
 .data
-    menus: .space 800      # 20 items * 40 bytes
-    tables:    .space 3360     # 15 tables * 224 bytes
+   	menus: .space 800      # 20 items * 40 bytes
+    	tables:    .space 3360     # 15 tables * 224 bytes
 
-    buffer_space: .space BUFFER_SIZE
-    banner:   .asciiz "restaurant-shell>> "
+    	buffer_space: .space BUFFER_SIZE
+    	banner:   .asciiz "restaurant-shell>> "
+    
+    	parsed_arg1: .word 0
+	parsed_arg2: .word 0
+	parsed_arg3: .word 0
     
     

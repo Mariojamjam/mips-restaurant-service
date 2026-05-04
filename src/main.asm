@@ -1,5 +1,7 @@
 .include "data.asm"
 .include "entry.asm"
+.include "utils/asci_to_int.asm"
+.include "utils/function_parser.asm"
 .include "commands.asm"
 .include "commands_table.asm"
 .include "mmio_config.asm"

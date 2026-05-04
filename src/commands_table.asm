@@ -12,6 +12,10 @@
 	#Message for invalid command
 	msg_invalid: .asciiz "Invalid command"
 
+#This is the commands table, evey command used in the project must be defined here
+#Format: POINTER, FUNCTION_NAME, NAME_LENGTH
+#The length is used to compare with the strncmp
+#The use of strncmp allows to use functions with arguments, but we need to store the length of the function names
 commands_table:
 	.word pt_test_func, test_func, 9
 	.word pt_test_func2, test_func2, 10
