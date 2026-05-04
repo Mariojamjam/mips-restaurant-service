@@ -50,6 +50,9 @@ read_str_mmio:
 	#Loads the char "\n" char, (Identifies ENTER input)
 	li  $t4, 0xA # "\n char hardcoded"
 	
+	#Backspace value. We are using this to avoid string bugs caused by typing fixes in the middle of the command writing.
+	li $t7, 0x08 
+	
 #Main read string loop
 read_str_loop:
 	#Uses the read_char_mmio to read the char and store it in the $v0 register
@@ -57,6 +60,7 @@ read_str_loop:
 	
 	#Branches if the the user pressed Enter ("\n")
 	beq $v0, $t4, read_str_end
+	beq $v0, $t7, backspace_check
 	#Store the char with store byte function
 	sb $v0, 0($t2)
 	#Adds 1 to go to ther next space to store the next char in the buffer
@@ -65,7 +69,7 @@ read_str_loop:
 	addi $t3, $t3, -1
 	#Branches if $t3 > 0, restarts the loop
 	bgtz $t3, read_str_loop
-	
+
 #Ending the read string function
 read_str_end:
 	#Stores the $0 byte as the end of the string
@@ -76,7 +80,21 @@ read_str_end:
     	addi $sp, $sp, 4
     	#Jump back to main loop
     	jr    $ra
-    	
+ 
+#This label deals with the backspace problem.
+#By subtracting 1 from $t2, the string pointer of the iteration, we can "ignore" the backspace value.
+#Alos, we need to add 1 to the buffer space again to maintain the consitency.
+backspace_check:
+	#Loading the buffer_space addres
+    	la $t5, buffer_space
+    	#If we are the start of the string, there is no need to subtract one. The loop will overwrite the undesired symbol.
+    	beq $t2, $t5, read_str_loop
+    	#Subtracting one from the buffer
+    	addi $t2, $t2, -1
+    	#Restoring the space that the backspace char took
+    	addi $t3, $t3, 1
+    	#Back to the loop
+    	j read_str_loop
     	
 #---- PRINT STRING FUNCTIONS---
 
