@@ -8,6 +8,9 @@
 	pt_test_func: .asciiz "test_func"
 	pt_test_func2: .asciiz "test_func2"
 	pt_menu_add: .asciiz  "menu_add"
+	
+	#==== MESSAGE FOR INVALID COMMNADS ====#
+	msg_invalid: .asciiz "Invalid Command"
 
 #This is the commands table, evey command used in the project must be defined here
 #Format: POINTER, FUNCTION_NAME, NAME_LENGTH
