@@ -42,6 +42,9 @@
     	parsed_arg1: .word 0
 	parsed_arg2: .word 0
 	parsed_arg3: .word 0
-	
-    	msg_invalid: .asciiz "Invalid command"
+    	
+    	enter_menu_add_msg: .asciiz "entered menu_add"
+   	parser_ok_msg: .asciiz "parser ok"
+        parser_error_msg: .asciiz "parser error"
+
     
