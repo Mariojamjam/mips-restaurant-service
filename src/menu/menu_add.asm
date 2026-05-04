@@ -6,6 +6,8 @@
         msg_price: .asciiz " | Price: "
         msg_description: .asciiz " | Description: "
         newline: .asciiz "\n"
+        
+        adding_error: .asciiz "Error adding item to the menu"
 
 .text
 #This function aims to add a new item to the menu array.
@@ -74,6 +76,7 @@ menu_add:
 
         #Saving the valid menu item id in a temporary register
         move $t0, $v0
+        sw   $t0, 4($sp)
 
         #Preparing the menu item id as an argument to get its address in the menu array
         move $a0, $v0
@@ -82,6 +85,8 @@ menu_add:
         #Saving the target menu item address in a temporary register and on the stack
         move $t4, $v0
         sw $t4, 16($sp)
+        
+        lw   $t0, 4($sp)
 
         #Loading the current id stored in the target menu object
         #If the id is different from 0, the position is already being used
@@ -180,7 +185,7 @@ menu_add:
 
 error_menu:
         #Printing the generic invalid command message
-        la $a0, msg_invalid
+        la $a0, adding_error
         jal print_str_mmio
 
         #Restoring the return address and closing the stack before returning
