@@ -6,11 +6,8 @@
 .data
 	#Pointer (pt)    | Function name
 	pt_test_func: .asciiz "test_func"
-	pt_test_func2: .asciiz "test_func2"	
-	
-	#------------------------------------------------------------
-	#Message for invalid command
-	msg_invalid: .asciiz "Invalid command"
+	pt_test_func2: .asciiz "test_func2"
+	pt_menu_add: .asciiz  "menu_add"
 
 #This is the commands table, evey command used in the project must be defined here
 #Format: POINTER, FUNCTION_NAME, NAME_LENGTH
@@ -19,6 +16,7 @@
 commands_table:
 	.word pt_test_func, test_func, 9
 	.word pt_test_func2, test_func2, 10
+	.word pt_menu_add, menu_add, 8
 	
 	#Used for comparison, defining the end of the table.
 	.word 0, 0, 0                
