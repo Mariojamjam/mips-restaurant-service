@@ -42,5 +42,6 @@
     	parsed_arg1: .word 0
 	parsed_arg2: .word 0
 	parsed_arg3: .word 0
-    
+	
+    	msg_invalid: .asciiz "Invalid command"
     
