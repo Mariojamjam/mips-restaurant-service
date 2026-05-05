@@ -4,6 +4,7 @@
 .include "utils/get_menu_item_addr.asm"
 .include "utils/function_parser.asm"
 .include "menu/menu_add.asm"
+.include "menu/menu_rm.asm"
 .include "commands.asm"
 .include "commands_table.asm"
 .include "mmio_config.asm"
