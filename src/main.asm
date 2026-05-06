@@ -7,6 +7,7 @@
 .include "menu/menu_add.asm"
 .include "menu/menu_rm.asm"
 .include "menu/menu_list.asm"
+.include "menu/menu_format.asm"
 .include "commands.asm"
 .include "commands_table.asm"
 .include "mmio_config.asm"
