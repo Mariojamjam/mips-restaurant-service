@@ -6,11 +6,17 @@
 .data
 	#Pointer (pt)    | Function name
 	pt_test_func: .asciiz "test_func"
-	pt_test_func2: .asciiz "test_func2"	
+	pt_test_func2: .asciiz "test_func2"
+	pt_menu_add: .asciiz  "menu_add"
+	pt_menu_rm: .asciiz "menu_rm"
+	pt_menu_list: .asciiz "menu_list"
+	pt_menu_format: .asciiz "menu_format"
+	pt_save_all_data: .asciiz "save_all_data"
+	pt_load_all_data: .asciiz "load_all_data"
+	pt_format_all_data: .asciiz "format_all_data"
 	
-	#------------------------------------------------------------
-	#Message for invalid command
-	msg_invalid: .asciiz "Invalid command"
+	#==== MESSAGE FOR INVALID COMMNADS ====#
+	msg_invalid: .asciiz "Invalid Command"
 
 #This is the commands table, evey command used in the project must be defined here
 #Format: POINTER, FUNCTION_NAME, NAME_LENGTH
@@ -19,6 +25,13 @@
 commands_table:
 	.word pt_test_func, test_func, 9
 	.word pt_test_func2, test_func2, 10
+	.word pt_menu_add, menu_add, 8
+	.word pt_menu_rm, menu_rm, 7
+	.word pt_menu_list, menu_list, 9
+	.word pt_menu_format, menu_format, 11
+	.word pt_save_all_data, save_all_data, 13
+	.word pt_load_all_data, load_all_data, 13
+	.word pt_format_all_data, format_all_data, 15
 	
 	#Used for comparison, defining the end of the table.
 	.word 0, 0, 0                
@@ -83,7 +96,12 @@ commands_table_jump:
 	#This means that this was not a false positive
 	beq $t6, $0, do_jump
 	
-	#Otherwise, sums 12 to $s0 and jump to the start of the loop
+	#Loading '-' in the $t7
+	li $t7, 45
+	#Branch if $t6 is '-'
+	beq $t6, $t7, do_jump
+	
+	#Otherwise, sums 12 to $s0 and jump to the start of the loop. False positive.
 	addi $s0, $s0, 12
 	#Restarts the loop
 	j commands_table_loop
