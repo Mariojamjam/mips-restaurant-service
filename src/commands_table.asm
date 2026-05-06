@@ -6,7 +6,8 @@
 .data
 	#Pointer (pt)    | Function name
 	pt_test_func: .asciiz "test_func"
-	pt_test_func2: .asciiz "test_func2"	
+	pt_test_func2: .asciiz "test_func2"
+	pt_table_start: .asciiz "table_start"
 	
 	#------------------------------------------------------------
 	#Message for invalid command
@@ -19,6 +20,7 @@
 commands_table:
 	.word pt_test_func, test_func, 9
 	.word pt_test_func2, test_func2, 10
+	.word pt_table_start, table_start, 11
 	
 	#Used for comparison, defining the end of the table.
 	.word 0, 0, 0                
