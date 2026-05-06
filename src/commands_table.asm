@@ -9,11 +9,7 @@
 	pt_test_func2: .asciiz "test_func2"
 	pt_menu_add: .asciiz  "menu_add"
 	pt_menu_rm: .asciiz "menu_rm"
-	pt_menu_list: .asciiz "menu_list"
-	pt_menu_format: .asciiz "menu_format"
-	pt_save_all_data: .asciiz "save_all_data"
-	pt_load_all_data: .asciiz "load_all_data"
-	pt_format_all_data: .asciiz "format_all_data"
+	pt_order_add: .asciiz "order_add"
 	
 	#==== MESSAGE FOR INVALID COMMNADS ====#
 	msg_invalid: .asciiz "Invalid Command"
@@ -27,11 +23,6 @@ commands_table:
 	.word pt_test_func2, test_func2, 10
 	.word pt_menu_add, menu_add, 8
 	.word pt_menu_rm, menu_rm, 7
-	.word pt_menu_list, menu_list, 9
-	.word pt_menu_format, menu_format, 11
-	.word pt_save_all_data, save_all_data, 13
-	.word pt_load_all_data, load_all_data, 13
-	.word pt_format_all_data, format_all_data, 15
 	
 	#Used for comparison, defining the end of the table.
 	.word 0, 0, 0                
