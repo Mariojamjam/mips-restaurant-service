@@ -7,6 +7,9 @@
 .eqv MENU_ITEM_DESCRIPTION 8 # 32 Bytes for the description
 .eqv MENU_ITEM_SIZE 40 # 40 Bytes for the whole object
 
+#Number of words for menu
+.eqv MENU_TOTAL_WORDS 200
+
 #Order definiton
 .eqv ORDER_ITEM_ID 0 #4 Bytes for the id
 .eqv ORDER_ITEM_QUANTITY 4 #4 Bytes for the quantity

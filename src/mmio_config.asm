@@ -1,5 +1,8 @@
+.data
+	int_buffer: .space 16
 #---- READ/DISPLAY CHAR FUNCTIONS ----
  
+ .text
  #Function that verifies the keyboard input
 read_char_mmio:
 	#Loading Keyboard Control Address
@@ -130,3 +133,5 @@ prnt_str_end:
     	addi $sp, $sp, 4
     	#Jump back to main loop
     	jr    $ra
+    	
+
