@@ -66,4 +66,7 @@
 	save_header_menu_size: .word MENU_TOTAL_BYTES
 	save_header_table_size: .word TABLE_TOTAL_BYTES
 
+	load_header_signature: .word 0
+	load_header_menu_size: .word 0
+	load_header_table_size: .word 0
     
