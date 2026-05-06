@@ -10,6 +10,7 @@
 .include "strlib/strcmp.asm"
 .include "strlib/strncmp.asm"
 .include "strlib/strcat.asm"
+.include "table/table_start.asm"
 
 main:
 	#Printing the banner
