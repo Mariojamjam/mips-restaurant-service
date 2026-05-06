@@ -3,7 +3,6 @@
 .include "utils/ascii_to_int.asm"
 .include "utils/get_menu_item_addr.asm"
 .include "utils/function_parser.asm"
-.include "utils/int_to_string.asm"
 .include "menu/menu_add.asm"
 .include "menu/menu_rm.asm"
 .include "menu/menu_list.asm"
