@@ -11,6 +11,7 @@
 	pt_menu_rm: .asciiz "menu_rm"
 	pt_menu_list: .asciiz "menu_list"
 	pt_menu_format: .asciiz "menu_format"
+	pt_save_all_data: .asciiz "save_all_data"
 	
 	#==== MESSAGE FOR INVALID COMMNADS ====#
 	msg_invalid: .asciiz "Invalid Command"
@@ -26,6 +27,7 @@ commands_table:
 	.word pt_menu_rm, menu_rm, 7
 	.word pt_menu_list, menu_list, 9
 	.word pt_menu_format, menu_format, 11
+	.word pt_save_all_data, save_all_data, 13
 	
 	#Used for comparison, defining the end of the table.
 	.word 0, 0, 0                
