@@ -6,12 +6,15 @@
         invalid_item_code_message: .asciiz "Error: Invalid item code"
         
 .macro print_error_message %reg
-#This macro is a code-saving method for reusing signed code snippets to write a message.
-#The label representing the macro is called the macro label, and after it, the label representing 
-#the message we want to print is called the macro label.
+#This macro is a code-saving mechanism used to reuse the same error printing routine
+#with different message labels throughout the program.
+#It receives as parameter the label of the message that must be printed,
+#calls the MMIO string output function,
+#restores the return address from the stack,
+#and returns control to the caller.
 #
-#Expected Format:
-# print_error_message "label of the expected message"
+#Expected format:
+#       print_error_message message_label
 
         #Printing the message that indicates an invalid item code or command format
         la   $a0, %reg
@@ -45,7 +48,7 @@
 #       An error message is printed if the informed menu item id is invalid
 #       An error message is printed if the informed item is not listed in the table order
 #       A success message is printed if the remove operation is completed
-        
+
 table_rm:
 	#Opening stack space to preserve the return address across multiple function calls
         addi $sp, $sp, -4
@@ -62,7 +65,7 @@ table_rm:
         jal function_parser
 
         #If the parser returns a value different from 0, the command format is invalid
-        bne $v0, $0, print_error_message invalid_item_code_message
+        bne $v0, $0, invalid_item_code
 
         #Loading the address of the analyzed arguments
 	#The first argument represents the table and the second the ID of the menu item you want to delete.
@@ -88,10 +91,10 @@ table_rm:
         li $t7, 15
 
         #If the converted id is smaller than 1, the id is invalid
-        blt $t1, $t6, print_error_message table_not_found_message
+        blt $t1, $t6, table_not_found
 
         #If the converted id is greater than 20, the id is invalid
-        bgt $t1, $t7, print_error_message table_not_found_message
+        bgt $t1, $t7, table_not_found
 
 	#Getting selected table base address
 	addi $t8, $t1, -1
@@ -102,17 +105,17 @@ table_rm:
 
 	#If the check returns 0, the table is not occupied
 	lw   $t5, TABLE_STATUS($t6)
-	beq  $t5, $0, print_error_message empty_table_message
+	beq  $t5, $0, empty_table
 
         #Loading the minimum and maximum valid menu item ids 
         li $t6, 1
         li $t7, 20
 
         #If the converted id is smaller than 1, the id is invalid
-        blt $t2, $t6, print_error_message invalid_item_code_message
+        blt $t2, $t6, invalid_item_code
 
         #If the converted id is greater than 20, the id is invalid
-        bgt $t2, $t7, print_error_message invalid_item_code_message
+        bgt $t2, $t7, invalid_item_code
 
         #Preparing the menu item id as an argument to get its address in the menu array
         move $a0, $t2
@@ -124,7 +127,7 @@ table_rm:
         #Loading the current id stored in the target menu object
         #If the id is 0, the item is not registered in the menu
         lw $t4, ORDER_ITEM_QUANTITY($t3)
-        beq $t3, $0, print_error_message item_not_found_message
+        beq $t3, $0, item_not_found
         
         #Remove one unit from the order item and update the memory slot
         addi $t4, $t4, -1
@@ -139,4 +142,13 @@ table_rm_end:
         lw   $ra, 0($sp)
         addi $sp, $sp, 4
         jr   $ra
-
+       
+	#Macros for printing strings using intermediate labels 
+invalid_item_code:
+	print_error_message invalid_item_code_message
+item_not_found:
+	print_error_message item_not_found_message
+empty_table:
+	print_error_message empty_table_message
+table_not_found:
+	print_error_message table_not_found_message

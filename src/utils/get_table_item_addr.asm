@@ -1,44 +1,46 @@
-#This function aims to find the address of an item inside a specific table order.
-#Each table stores 20 menu item slots sequentially in memory.
-#The function calculates the exact address of the desired item
-#based on the table number and the menu item id.
+#This function aims to find the address of a specific ordered item
+#inside the order area of a given table.
 
 #Input:
 #       $a0: table number
 #       $a1: menu item id
 
 #Output:
-#       $v0: address of the desired item slot inside the table order array
+#       $v0: address of the ORDER_ITEM object inside TABLE_PEDIDO
 
-get_table_item_addr:
-        #Moving the table number and item id to temporary registers
+.include "../data.asm"
+
+get_table_order_item_addr:
+        #Moving inputs to temporary registers
         move $t0, $a0
         move $t1, $a1
 
-        #Converting both values to zero-based indexes
+        #Converting table and item ids to zero-based indexes
         addi $t0, $t0, -1
         addi $t1, $t1, -1
 
-        #Loading the number of items stored per table
-        li $t2, 20
+        #Loading the full size of a table object
+        li $t2, TABLE_SIZE
 
-        #Calculating the starting logical index of the table
+        #Calculating the byte offset of the desired table
         mul $t3, $t0, $t2
 
-        #Adding the item index inside that table
-        add $t3, $t3, $t1
+        #Loading the base address of the tables array
+        la $t4, tables
 
-        #Loading the size of each stored table-order item
-        li $t4, 4
+        #Obtaining the base address of the selected table
+        add $t4, $t4, $t3
 
-        #Converting logical index into byte offset
-        mul $t5, $t3, $t4
+        #Jumping to the pedido area inside the selected table
+        addi $t4, $t4, TABLE_PEDIDO
 
-        #Loading the base address of the table orders array
-        la $t6, table_orders
+        #Loading the size of one ORDER_ITEM object
+        li $t5, ORDER_ITEM_SIZE
 
-        #Adding the calculated offset to the base address
-        add $v0, $t6, $t5
+        #Calculating the byte offset of the desired item inside pedido
+        mul $t6, $t1, $t5
 
-        #Returning to caller
+        #Final address = selected table pedido + item offset
+        add $v0, $t4, $t6
+
         jr $ra
