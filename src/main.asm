@@ -10,6 +10,7 @@
 .include "menu/menu_format.asm"
 .include "data_management/save_all_data.asm"
 .include "data_management/load_all_data.asm"
+.include "data_management/format_all_data.asm"
 .include "commands.asm"
 .include "commands_table.asm"
 .include "mmio_config.asm"
