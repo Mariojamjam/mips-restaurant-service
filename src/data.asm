@@ -25,6 +25,8 @@
 .eqv TABLE_PEDIDO 64 #160 Bytes for the pedido
 .eqv TABLE_SIZE 224 # 224 Bytes for the whole object
 
+.eqv TABLE_TOTAL_WORDS 840
+
 # MMIO Addresses
 .eqv KEYBOARD_CONTROL 0xffff0000  # Status: bit 0 is "1" when a new key is available
 .eqv KEYBOARD_DATA    0xffff0004  # Data: contains the ASCII code of the pressed key
