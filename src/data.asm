@@ -25,6 +25,8 @@
 .eqv TABLE_PEDIDO 64 #160 Bytes for the pedido
 .eqv TABLE_SIZE 224 # 224 Bytes for the whole object
 
+.eqv TABLE_TOTAL_WORDS 840
+
 # MMIO Addresses
 .eqv KEYBOARD_CONTROL 0xffff0000  # Status: bit 0 is "1" when a new key is available
 .eqv KEYBOARD_DATA    0xffff0004  # Data: contains the ASCII code of the pressed key
@@ -34,6 +36,14 @@
 #define buffers size
 .eqv BUFFER_SIZE 256
 
+#save/load constants
+.eqv SAVE_SIGNATURE 0x54534552    # "REST" stored as a word for little-endian memory layout
+
+.eqv MENU_TOTAL_BYTES 800 #800 Bytes for the menus
+.eqv TABLE_TOTAL_BYTES 3360 #3360 Bytes for the tables
+
+.eqv SAVE_HEADER_BYTES 12 # 12 Bytes for header (signature and entity sizes)
+.eqv SAVE_TOTAL_BYTES 4172 # 4172 Total bytes stored in the project
 
 .data
    	menus: .space 800      # 20 items * 40 bytes
@@ -49,5 +59,16 @@
     	enter_menu_add_msg: .asciiz "entered menu_add"
    	parser_ok_msg: .asciiz "parser ok"
         parser_error_msg: .asciiz "parser error"
+        
+       	#==== file managemente data ======
+        
+	save_file_name: .asciiz "restaurant.bin"
+       
+       	save_header_signature: .word SAVE_SIGNATURE
+	save_header_menu_size: .word MENU_TOTAL_BYTES
+	save_header_table_size: .word TABLE_TOTAL_BYTES
 
+	load_header_signature: .word 0
+	load_header_menu_size: .word 0
+	load_header_table_size: .word 0
     
