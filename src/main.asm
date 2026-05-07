@@ -11,6 +11,7 @@
 .include "strlib/strncmp.asm"
 .include "strlib/strcat.asm"
 .include "table_start.asm"
+.include "utils/get_table_addr.asm"
 
 main:
 	#Printing the banner
