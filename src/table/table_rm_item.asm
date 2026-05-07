@@ -22,7 +22,7 @@
 
         #Restoring the return address and closing the stack before returning
         lw   $ra, 0($sp)
-        addi $sp, $sp, 8
+        addi $sp, $sp, 16
         jr   $ra
 .end_macro 
 
@@ -51,7 +51,12 @@
 
 table_rm_item:
 	#Opening stack space to preserve the return address across multiple function calls
-        addi $sp, $sp, -8
+        #Stack layout:
+        #       0($sp): saved $ra
+        #       4($sp): table id (int)
+        #       8($sp): item id (int)
+        #       12($sp): table address
+        addi $sp, $sp, -16
         sw   $ra, 0($sp)
 
         #Preparing the arguments for the function parser
@@ -85,7 +90,8 @@ table_rm_item:
 	jal ascii_to_int
 	
 	#Saving the desired menu item number from the table in a temporary record
-	move $t2, $v0      
+	move $t2, $v0
+	sw   $t2, 8($sp)
 	lw $t1, 4($sp)
 	
 	#Loading the minimum and maximum valid menu item ids 
@@ -99,11 +105,14 @@ table_rm_item:
         bgt $t1, $t7, table_not_found
 
 	#Getting selected table base address
-	addi $t8, $t1, -1
-	li   $t7, TABLE_SIZE
-	mul  $t8, $t8, $t7
-	la   $t6, tables
-	add  $t6, $t6, $t8
+	move $a0, $t1
+	jal  get_table_addr
+	move $t6, $v0
+	sw   $t6, 12($sp)
+
+	#If the current table id is 0, the table does not exist
+	lw   $t5, TABLE_ID($t6)
+	beq  $t5, $0, table_not_found
 
 	#If the check returns 0, the table is not occupied
 	lw   $t5, TABLE_STATUS($t6)
@@ -119,25 +128,44 @@ table_rm_item:
         #If the converted id is greater than 20, the id is invalid
         bgt $t2, $t7, invalid_item_code
 
-        #Preparing the menu item id as an argument to get its address in the menu array
-        move $a0, $t1
-        move $a1, $t2
-        jal get_table_item_addr 
-        
-        #Saving the target menu item address in a temporary register
-        move $t3, $v0
-        
-        #Loading the current id stored in the target menu object
-        #If the id is 0, the item is not registered in the menu
-        beq $t3, $0, table_item_not_found
-        lw $t4, ORDER_ITEM_QUANTITY($t3)
-        
-        #If quantity <= 0, item is not listed
-	blez $t4, table_item_not_found
-        
-        #Remove one unit from the order item and update the memory slot
-        addi $t4, $t4, -1
-	sw $t4, ORDER_ITEM_QUANTITY($t3)
+	#Searching linearly through TABLE_PEDIDO to match the storage model used by order_add
+	lw   $t6, 12($sp)
+	addi $t3, $t6, TABLE_PEDIDO
+	addi $t7, $t3, 160
+
+find_order_item:
+	lw   $t4, ORDER_ITEM_QUANTITY($t3)
+	blez $t4, next_order_item
+
+	lw   $t5, ORDER_ITEM_ID($t3)
+	lw   $t2, 8($sp)
+	beq  $t5, $t2, remove_found_item
+
+next_order_item:
+	addi $t3, $t3, ORDER_ITEM_SIZE
+	blt  $t3, $t7, find_order_item
+	j    table_item_not_found
+
+remove_found_item:
+	#Remove one unit from the order item and update the memory slot
+	addi $t4, $t4, -1
+	sw   $t4, ORDER_ITEM_QUANTITY($t3)
+
+	#If the quantity reaches 0, clear the stored item id as well
+	bgtz $t4, subtract_removed_item_price
+	sw   $0, ORDER_ITEM_ID($t3)
+
+subtract_removed_item_price:
+	#Decrease the table total by the removed menu item price
+	lw   $a0, 8($sp)
+	jal  get_menu_item_addr
+
+	move $t8, $v0
+	lw   $t6, 12($sp)
+	lw   $t5, TABLE_TOTAL($t6)
+	lw   $t7, MENU_ITEM_PRICE($t8)
+	sub  $t5, $t5, $t7
+	sw   $t5, TABLE_TOTAL($t6)
 
 #Macros for printing strings using intermediate labels 
 
