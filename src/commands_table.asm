@@ -23,6 +23,7 @@ commands_table:
 	.word pt_test_func2, test_func2, 10
 	.word pt_menu_add, menu_add, 8
 	.word pt_menu_rm, menu_rm, 7
+	.word pt_order_add, order_add, 9
 	
 	#Used for comparison, defining the end of the table.
 	.word 0, 0, 0                
