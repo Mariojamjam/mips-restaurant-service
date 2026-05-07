@@ -138,7 +138,7 @@ order_add:
 	lw $a1, 8($sp) #loading with the ID to be verified
 	jal check_order_rep
 	move $t7, $v0 #to make operations with the return of the function
-	beq $t7, $zero, end_success #if it's 0, then it saved the item in a currently existing order
+	beq $t7, $zero, update_table_total #if it's 0, then it saved the item in a currently existing order
 	#if it's not 0, then it can either mean it's a full table, or that it has vacant spots
 
 #VERIFY IF THE TABLE CAN HAVE MORE ORDERS
@@ -146,8 +146,19 @@ order_add:
 	lw $a0, 12($sp) #loading $a0 with the desired table address, preparing for search function (redundant)
 	lw $a1, 8($sp) #loading with the ID to be verified (redundant)
 	jal search_order #return either with the correct address that is vacant or 0
-	beq $v0, $zero, end_success
+	beq $v0, $zero, update_table_total
 	j error_full
+
+
+update_table_total:
+	# Add the selected menu item price to the table total after a successful order
+	lw $t4, 12($sp) #table address
+	lw $t5, 20($sp) #menu item address
+	lw $t6, TABLE_TOTAL($t4)
+	lw $t7, MENU_ITEM_PRICE($t5)
+	add $t6, $t6, $t7
+	sw $t6, TABLE_TOTAL($t4)
+	j end_success
 	
 
 #generic error when placing the order                
