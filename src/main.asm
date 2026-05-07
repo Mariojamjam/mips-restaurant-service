@@ -2,6 +2,7 @@
 .include "entry.asm"
 .include "utils/ascii_to_int.asm"
 .include "utils/get_menu_item_addr.asm"
+.include "utils/get_table_item_addr.asm"
 .include "utils/function_parser.asm"
 .include "utils/get_table_addr.asm"
 .include "utils/check_table_status.asm"
@@ -9,7 +10,12 @@
 .include "utils/search_order.asm"
 .include "menu/menu_add.asm"
 .include "menu/menu_rm.asm"
-.include "table/order_add.asm"
+.include "menu/menu_list.asm"
+.include "menu/menu_format.asm"
+.include "table/table_rm_item.asm"
+.include "data_management/save_all_data.asm"
+.include "data_management/load_all_data.asm"
+.include "data_management/format_all_data.asm"
 .include "commands.asm"
 .include "commands_table.asm"
 .include "mmio_config.asm"
@@ -18,6 +24,8 @@
 .include "strlib/strcmp.asm"
 .include "strlib/strncmp.asm"
 .include "strlib/strcat.asm"
+.include "table/table_start.asm"
+.include "utils/get_table_addr.asm"
 
 main:
 	#Printing the banner
