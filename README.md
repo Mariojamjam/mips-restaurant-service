@@ -1,44 +1,52 @@
 # MIPS Restaurant Service
 
-Assembly MIPS project for the MARS simulator. The goal of the project is to build a restaurant terminal capable of managing menu items, tables, orders, and persistent storage through a command-driven shell.
+Assembly MIPS project for the MARS simulator. The system implements a restaurant shell capable of managing menu items, tables, orders, partial payments, table reports, table closing, and binary persistence.
 
-At its current stage, the repository already contains the shell backbone, MMIO support for keyboard and display, a custom string library, and a command dispatch table. It is not yet the full system required by the assignment, but the current architecture is already a good foundation for incremental development.
+This README explains:
+- how to run the project
+- how the codebase is organized
+- how the modular architecture is structured
 
-## Project goal
+## Overview
 
-The final system is expected to:
+The program is built as a single MIPS application, but its logic is split across multiple specialized `.asm` files.
 
-- manage up to 20 menu items
-- manage up to 15 active tables
-- register up to 20 orders per table, with quantity tracking for repeated items
-- support partial payments
-- generate table consumption reports
-- close tables only when the remaining balance is zero
-- save and reload data from external files
-- run as a text command terminal
+The shell:
+- prints a banner
+- reads one full input line
+- identifies the typed command
+- jumps to the corresponding routine
+- returns to the prompt
 
-## Current status
+The project uses:
+- MMIO for shell input and output
+- offset-based in-memory structures for menu items, tables, and orders
+- utility routines for parsing, string handling, and numeric conversion
+- binary file persistence for save and reload operations
 
-The project currently provides:
+## How to run
 
-- a separate entry point
-- the main shell loop
-- a terminal banner
-- line input through Keyboard MMIO
-- character and string output through Display MMIO
-- a string library with `strcpy`, `memcpy`, `strcmp`, `strncmp`, and `strcat`
-- a command table that matches text input and jumps to a routine
-- an initial memory model for menu items, tables, and orders
-- test commands (`test_func` and `test_func2`) to validate shell execution flow
+Assemble and run only [src/main.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/main.asm).
 
-What is still missing:
+### MARS setup
 
-- restaurant business rules
-- command option parsing
-- the commands required by the assignment
-- file persistence
+1. Open `Mars4_5.jar`.
+2. Open [src/main.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/main.asm).
+3. Assemble the program.
+4. Open `Tools -> Keyboard and Display MMIO Simulator`.
+5. Click `Connect to MIPS`.
+6. Run the program.
+7. Type commands through the MMIO keyboard input.
 
-## Repository structure
+### Automatic reload
+
+During startup, `main.asm` attempts to restore previously saved data before entering the shell loop.
+
+This means:
+- if a valid save file exists, the previous restaurant state is restored
+- if no save file exists, the shell starts with empty runtime data
+
+## Project structure
 
 ```text
 src/
@@ -46,320 +54,281 @@ src/
   main.asm
   data.asm
   mmio_config.asm
-  commands_table.asm
   commands.asm
+  commands_table.asm
   strlib/
     strcpy.asm
     memcpy.asm
     strcmp.asm
     strncmp.asm
     strcat.asm
+  utils/
+    ascii_to_int.asm
+    int_to_string.asm
+    function_parser.asm
+    get_menu_item_addr.asm
+    get_table_addr.asm
+    get_table_item_addr.asm
+    check_table_status.asm
+    check_order_rep.asm
+    search_order.asm
+  menu/
+    menu_add.asm
+    menu_rm.asm
+    menu_list.asm
+    menu_format.asm
+  table/
+    table_start.asm
+    order_add.asm
+    table_rm_item.asm
+    partial_table.asm
+    table_pay.asm
+    table_close.asm
+    table_format.asm
+  data_management/
+    save_all_data.asm
+    load_all_data.asm
+    format_all_data.asm
 Mars4_5.jar
+README.md
+restaurant.bin
 ```
 
-## Implemented architecture
+## Modular architecture
 
-### 1. Program flow
+### 1. Root program file
 
-The actual entry point is in `src/entry.asm`, which only transfers control to `main`.
+[src/main.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/main.asm) is the central file of the project.
 
-`src/main.asm` contains the shell loop:
+It is responsible for:
+- including the required modules
+- performing startup initialization
+- attempting automatic save restoration
+- running the main shell loop
 
-1. print the banner
-2. read one line into `buffer_space`
-3. dispatch the command through the command table
-4. print a newline
-5. jump back to the start
+In practice, `main.asm` is the file that ties the whole system together.
 
-This is a good shell design because the global control flow stays simple and centralized.
+### 2. Entry point
 
-### 2. MMIO layer
+[src/entry.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/entry.asm) exists only to organize load order and forward execution to `main`.
 
-`src/mmio_config.asm` concentrates all communication with the simulated MARS peripherals:
-
-- `read_char_mmio`
-- `print_char_mmio`
-- `read_str_mmio`
-- `print_str_mmio`
-
-This separation matters because it prevents MMIO polling logic and hardware addresses from leaking into business code. The rest of the system can think in terms of "read string" and "print string" instead of manually operating the device registers everywhere.
+It should not contain business logic. Real startup behavior belongs in `main.asm`.
 
 ### 3. Data layer
 
-`src/data.asm` defines:
-
+[src/data.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/data.asm) defines:
 - structure offsets
 - record sizes
-- allocated memory for menus and tables
+- global buffers
+- reserved memory areas for `menus` and `tables`
+- persistence constants
 - MMIO addresses
-- the input buffer
-- the terminal banner
 
-The main design idea is to treat records as offset-based objects. In MIPS Assembly, this is much easier to scale than scattering unrelated variables across memory.
+The project models records as offset-based objects.
 
 Examples:
-
-- `TABLE_ID`
+- `MENU_ITEM_ID`
+- `MENU_ITEM_PRICE`
 - `TABLE_STATUS`
-- `TABLE_RESP`
-- `TABLE_PHONE`
 - `TABLE_TOTAL`
 - `TABLE_PAID`
 - `TABLE_PEDIDO`
 
-These offsets let contributors compute any field address from the base address of a table record.
+This makes memory navigation predictable and consistent across the codebase.
 
-### 4. String library
+### 4. MMIO layer
 
-The files in `src/strlib/` implement a subset of `string.h` in MIPS:
+[src/mmio_config.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/mmio_config.asm) centralizes all communication with the keyboard and display MMIO devices.
 
+This keeps polling and raw device access away from business routines. The rest of the system can use higher-level helpers for reading strings and printing output.
+
+### 5. String library
+
+The folder [src/strlib](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/strlib) contains MIPS implementations inspired by `string.h`:
 - `strcpy`
 - `memcpy`
 - `strcmp`
 - `strncmp`
 - `strcat`
 
-These routines are essential for the shell because command interpretation depends on comparing and manipulating strings.
+These functions support shell parsing and general string manipulation across the project.
 
-### 5. Command dispatch
+### 6. Utility layer
 
-`src/commands_table.asm` is the bridge between typed input and executable code.
+The folder [src/utils](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/utils) contains reusable support functions.
 
-Each command entry has three parts:
+The most important ones are:
+- `ascii_to_int.asm`: converts numeric strings to integers
+- `int_to_string.asm`: converts integers to strings
+- `function_parser.asm`: splits command arguments
+- `get_menu_item_addr.asm`: locates menu items by code
+- `get_table_addr.asm`: locates tables by code
+- `get_table_item_addr.asm`: computes a table order slot address
+- `check_table_status.asm`: checks whether service is active on a table
+- `check_order_rep.asm`: handles repeated order detection
+- `search_order.asm`: finds a free order slot inside `TABLE_PEDIDO`
 
-```asm
-.word pt_test_func, test_func, 9
+This layer exists to prevent business logic from duplicating low-level operations.
+
+### 7. Domain modules
+
+The project separates business routines by area.
+
+#### Menu
+
+The folder [src/menu](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/menu) contains menu-related commands:
+- add item
+- remove item
+- list items
+- clear the menu
+
+#### Tables and orders
+
+The folder [src/table](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/table) contains:
+- start table service
+- add item to a table
+- remove item from a table
+- print a partial table report
+- register partial payment
+- close a table
+- clear all tables
+
+#### Persistence
+
+The folder [src/data_management](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/data_management) contains:
+- save current data
+- reload persisted data
+- clear current in-memory runtime data
+
+### 8. Command dispatch
+
+[src/commands_table.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/commands_table.asm) is the bridge between typed text and executable routines.
+
+Each table entry contains:
+- a pointer to the command string
+- the label of the target routine
+- the command name length
+
+Simplified flow:
+1. the shell reads a line into `buffer_space`
+2. `commands_table` scans the command entries
+3. it compares the input using `strncmp`
+4. it validates the real end of the command name
+5. it jumps to the correct routine with `jalr`
+
+This design allows new commands to be added without modifying the shell loop itself.
+
+## Execution flow
+
+The program can be summarized as:
+
+```text
+main.asm
+  -> startup initialization
+  -> load_all_data (silent during boot)
+  -> main_loop
+       -> print banner
+       -> read input through MMIO
+       -> dispatch command through commands_table
+       -> execute business routine
+       -> return to prompt
 ```
 
-Meaning:
+## Architectural layers
 
-- `pt_test_func`: address of the string that stores the command name
-- `test_func`: address of the routine that should run
-- `9`: number of characters used in the initial comparison
+A good way to reason about the system is to split it into four layers.
 
-Current dispatch flow:
+### Shell
+- `main.asm`
+- `commands_table.asm`
 
-1. load one table entry
-2. compare `buffer_space` against the command string using `strncmp`
-3. verify that the next byte actually ends the command name
-4. if valid, jump to the routine with `jalr`
-5. otherwise continue searching the next entry
+Responsibility:
+- receive user input
+- determine which routine should run
 
-This is a solid starting point because command discovery is isolated from command implementation.
+### Utilities
+- `strlib/`
+- `utils/`
 
-### 6. Command implementation
+Responsibility:
+- provide reusable low-level helpers
 
-`src/commands.asm` holds the routines called by the dispatch table. Right now it only contains test commands, but the intended architecture is:
+### Business logic
+- `menu/`
+- `table/`
+- `data_management/`
 
-- `commands_table.asm` decides which command to call
-- `commands.asm` implements that command
-- `data.asm` provides the memory layout
-- `mmio_config.asm` provides I/O
-- `strlib/` provides string support
+Responsibility:
+- implement restaurant rules and command behavior
 
-## How to run
+### Data
+- `data.asm`
 
-1. Open `Mars4_5.jar`.
-2. Open `src/main.asm`.
-3. Assemble the program.
-4. Open `Tools -> Keyboard and Display MMIO Simulator`.
-5. Click `Connect to MIPS`.
-6. Run the program.
-7. Type commands in the MMIO keyboard input area.
+Responsibility:
+- define the memory layout and shared state
 
-The currently available test commands are:
+## Working with commands
 
-- `test_func`
-- `test_func2`
+To add or modify a command, the usual flow is:
 
-They exist to validate the shell infrastructure before the real restaurant commands are implemented.
+1. create or update the routine in the appropriate module
+2. include the file in [src/main.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/main.asm), if it is not already included
+3. register the command string and dispatch entry in [src/commands_table.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/commands_table.asm)
+4. reuse existing offsets and utility routines instead of recalculating everything manually
 
-## How to contribute
+## Important conventions
 
-This is the most important part of the README. The project will scale much better if new contributions follow a consistent structure.
+### 1. Compile only `main.asm`
 
-### General rule
+This is the most important rule for anyone continuing the project.
 
-Before adding a new command, think in three layers:
+Individual modules depend on shared includes, constants, and labels that are only guaranteed when assembled through `main.asm`.
 
-1. how the command will be recognized
-2. which routine will be called
-3. which data that routine will read or modify
+### 2. Do not assume `$t0-$t9` survive `jal`
+
+The project relies heavily on helper functions. Therefore:
+- if a value must survive a function call, save it on the stack
+- or move it into a properly preserved `$s*` register
+
+### 3. Prefer existing utilities
+
+Before computing a table or menu address manually, check whether a utility already exists in `utils/`.
+
+This keeps the codebase more consistent.
+
+### 4. Use command-specific labels
+
+Because many files are included into the same final program, generic labels such as:
+- `invalid_command`
+- `table_not_found`
+
+can easily collide.
+
+Prefer more specific labels such as:
+- `table_start_not_found`
+- `table_close_invalid_format`
+
+## About `restaurant.bin`
+
+`restaurant.bin` is the persistence file used by the system.
+
+It:
+- can be recreated by the program
+- stores the saved state of menus and tables
+- is not a source file
 
 In practice:
+- it is useful for testing save and load behavior
+- it should not be treated as part of the codebase architecture
 
-- command recognition belongs in `commands_table.asm`
-- command implementation belongs in `commands.asm` or a future service module
-- data definitions belong in `data.asm`
+## Quick summary
 
-### How to add a new command
+If you are working on this project, keep these points in mind:
 
-Suppose you want to add `cardapio_list`.
+1. open and assemble only [src/main.asm](C:/Users/Pichau/Documents/PastaJam/Codigo/mips-restaurant-service/src/main.asm)
+2. connect the MMIO simulator before running
+3. understand modules by responsibility, not as isolated files
+4. reuse existing helper functions whenever possible
+5. preserve the separation between shell, utilities, business logic, and data
 
-Step 1. Create the command name string in `src/commands_table.asm`
-
-```asm
-pt_cardapio_list: .asciiz "cardapio_list"
-```
-
-Step 2. Add a new table entry
-
-```asm
-.word pt_cardapio_list, cardapio_list, 13
-```
-
-Step 3. Implement the routine in `src/commands.asm`
-
-```asm
-cardapio_list:
-        addi $sp, $sp, -4
-        sw   $ra, 0($sp)
-
-        # implement listing logic here
-
-        lw   $ra, 0($sp)
-        addi $sp, $sp, 4
-        jr   $ra
-```
-
-Step 4. If the routine needs menu access, use the offsets and sizes defined in `src/data.asm`.
-
-Step 5. If the routine needs output, use `print_str_mmio` and `print_char_mmio` instead of duplicating I/O logic.
-
-### How to add a new utility function
-
-If the function is generic string or memory support, place it under `src/strlib/`.
-
-Good future candidates:
-
-- decimal string to integer conversion
-- a routine to locate the `-` separator
-- a routine to iterate through command options
-- formatting for money in cents
-
-If the function is not generic, consider placing it in a future domain module such as:
-
-- `menu_service.asm`
-- `table_service.asm`
-- `order_service.asm`
-- `parser.asm`
-- `storage.asm`
-
-### How to think about future modules
-
-`commands.asm` is still small today, but it will grow quickly once the assignment commands are implemented. The natural evolution is to split responsibilities:
-
-- `commands.asm`: command entry routines only
-- `parser.asm`: option parsing and format validation
-- `menu_service.asm`: menu operations
-- `table_service.asm`: table operations
-- `order_service.asm`: order operations
-- `storage.asm`: save and reload logic through file syscalls
-
-That would let a command such as `mesa_ad_item-09-10` follow a clean flow:
-
-1. `commands_table` recognizes the command
-2. `commands.asm` enters `mesa_ad_item`
-3. `mesa_ad_item` uses the parser to extract options
-4. `order_service` validates table and menu item
-5. `order_service` updates memory
-6. `mmio_config` prints the result
-
-### Recommended register convention
-
-To contribute safely without introducing hard-to-debug side effects, follow this register discipline:
-
-- use `$t0-$t9` only for temporary values
-- never assume `$t*` survives a `jal`
-- use `$a0-$a3` only for function arguments
-- use `$v0-$v1` only for return values
-- if a routine performs `jal`, preserve `$ra`
-- if a routine uses `$s0-$s7`, preserve them on the stack
-
-Practical rule:
-
-- if a value must survive a function call, store it on the stack or in `$s*`
-- if a value is disposable, use `$t*`
-
-### Minimum standard for new routines
-
-Every new routine should clearly answer:
-
-- what arguments it receives
-- which registers hold those arguments
-- what it returns
-- which registers it preserves
-- which `data.asm` structures it accesses
-
-A short header comment helps a lot:
-
-```asm
-# Adds one menu item to a table order
-# $a0 = table code
-# $a1 = item code
-# $v0 = 0 on success, negative on error
-```
-
-### Things to watch when editing `commands_table.asm`
-
-This file is sensitive because it mixes:
-
-- string addresses
-- code addresses
-- command lengths
-- search control flow
-
-Whenever you edit it, review:
-
-- whether the command length is correct
-- whether the command name matches the routine
-- whether the routine actually exists
-- whether the command creates a prefix conflict with another one
-- whether any value needed after `jal` is still stored in `$t*`
-
-### Things to watch when editing `data.asm`
-
-This file defines the memory layout. A change here affects the whole project.
-
-Whenever you change offsets or sizes:
-
-- recalculate the total structure size
-- update the comments
-- review related `.space` allocations
-- confirm that loops still use the correct stride
-
-## Example of a safe contribution
-
-Example: adding the `mesa_format` command.
-
-1. Create the string `pt_mesa_format` in the command table data area.
-2. Add the entry `.word pt_mesa_format, mesa_format, 11`.
-3. Implement the `mesa_format` routine in `commands.asm`.
-4. Create or reuse a routine that iterates through all 15 tables.
-5. Clear status, responsible name, phone, paid values, and order records.
-6. Print the success message using MMIO.
-
-The key idea is to avoid stuffing all logic directly into the shell loop. The shell should remain small; business behavior should live in command routines and future service modules.
-
-## Suggested next steps
-
-A good implementation order from here is:
-
-1. stabilize the register convention
-2. build a simple parser for commands that use `-`
-3. implement basic menu commands
-4. implement table initialization and table reset
-5. implement order management and partial reports
-6. implement file persistence
-
-## Final notes
-
-This project already has a good base for growth because:
-
-- the main shell is isolated
-- MMIO is separated from business logic
-- the string library already exists
-- the memory layout is offset-based
-- the command table supports incremental expansion
-
-The main architectural priority going forward is to keep responsibilities separated, instead of mixing parsing, business logic, and I/O inside the same routine.
+This structure was designed to let the project grow without turning into one large monolithic assembly file.
