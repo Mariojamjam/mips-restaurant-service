@@ -5,10 +5,18 @@
 .include "utils/get_table_item_addr.asm"
 .include "utils/function_parser.asm"
 .include "utils/int_to_string.asm"
+.include "utils/search_order.asm"
+.include "utils/check_table_status.asm"
+.include "utils/check_order_rep.asm"
 .include "menu/menu_add.asm"
 .include "menu/menu_rm.asm"
 .include "menu/menu_list.asm"
 .include "menu/menu_format.asm"
+.include "table/order_add.asm"
+.include "table/partial_table.asm"
+.include "table/table_format.asm"
+.include "table/table_close.asm"
+.include "table/table_pay.asm"
 .include "table/table_rm_item.asm"
 .include "data_management/save_all_data.asm"
 .include "data_management/load_all_data.asm"
@@ -25,6 +33,11 @@
 .include "utils/get_table_addr.asm"
 
 main:
+	#Attempting to restore saved data silently during program startup
+	li $a2, 1
+	jal load_all_data
+
+main_loop:
 	#Printing the banner
 	la $a0, banner
 	jal print_str_mmio
@@ -40,5 +53,5 @@ main:
 	jal print_char_mmio
 	
 	#Restart the loop
-	j main
+	j main_loop
 	

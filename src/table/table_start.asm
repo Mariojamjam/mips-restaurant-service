@@ -1,10 +1,3 @@
-.data
-        start_success_message:  .asciiz "Atendimento iniciado com sucesso"
-        table_not_found_message: .asciiz "Falha: mesa inexistente"
-        table_occupied_message: .asciiz "Falha: mesa ocupada"
-        invalid_command_message: .asciiz "Comando invalido"
-
-.text
 # This function aims to start a service at a specific table.
 # It parses the command arguments, validates the table number,
 # checks if the table is already occupied, validates the phone length,
@@ -29,6 +22,13 @@
 #       12($sp): parsed argument 3 address (name string)
 #       16($sp): target table base address
 
+.data
+        table_start_success_message:  .asciiz "Service started successfully"
+        table_start_not_found_message: .asciiz "Failed: table does not exist"
+        table_start_occupied_message: .asciiz "Failed: table is occupied"
+        table_start_invalid_command_message: .asciiz "Invalid command"
+
+.text
 table_start:
         # Opening stack space to preserve return address and temporary values
         addi $sp, $sp, -20
@@ -62,15 +62,15 @@ table_start:
 
         # If ascii_to_int returns -1, the string contains invalid characters
         li $t5, -1
-        beq $v0, $t5, table_not_found
+        beq $v0, $t5, table_start_not_found
 
         # Valid table range is 1 to 15
         li $t6, 1
         li $t7, 15
 
         # If the table number is out of range, report error
-        blt $v0, $t6, table_not_found
-        bgt $v0, $t7, table_not_found
+        blt $v0, $t6, table_start_not_found
+        bgt $v0, $t7, table_start_not_found
 
         # Saving the valid table number (integer) on the stack
         move $t0, $v0
@@ -86,7 +86,7 @@ table_start:
 
         # Checking if the table is already occupied (TABLE_STATUS != 0 means occupied)
         lw $t5, TABLE_STATUS($t4)
-        bne $t5, $0, table_occupied
+        bne $t5, $0, table_start_occupied
 
         # --- Validating phone string length (max 15 chars to fit TABLE_PHONE = 16 bytes) ---
         lw   $a0, 8($sp)        # load phone string address
@@ -98,7 +98,7 @@ ts_count_phone_loop:
         addi $a0, $a0, 1        # advance pointer
         addi $t6, $t6, 1        # increment counter
         li   $t8, 15
-        bgt  $t6, $t8, table_not_found  # phone too long, treat as invalid
+        bgt  $t6, $t8, table_start_not_found  # phone too long, treat as invalid
 
         j ts_count_phone_loop
 
@@ -122,6 +122,8 @@ ts_phone_ok:
         # This prevents residual order data from a previous session
         addi $t0, $t4, TABLE_PEDIDO  # pointer to start of order area
         li   $t1, 40                 # 160 bytes / 4 bytes per word = 40 iterations
+        
+ts_name_ok:
 
 ts_zero_pedido_loop:
         sw   $0, 0($t0)         # clear current word
@@ -142,7 +144,7 @@ ts_zero_pedido_loop:
         jal  strcpy
 
         # Printing success message
-        la $a0, start_success_message
+        la $a0, table_start_success_message
         jal print_str_mmio
 
         # Restoring stack and returning
@@ -157,7 +159,7 @@ ts_zero_pedido_loop:
 
 table_start_invalid_cmd:
         # Parser failed: command format does not match expected structure
-        la $a0, invalid_command_message
+        la $a0, table_start_invalid_command_message
         jal print_str_mmio
 
         lw   $ra, 0($sp)
@@ -165,9 +167,9 @@ table_start_invalid_cmd:
         jr   $ra
 
 
-table_not_found:
+table_start_not_found:
         # Table number is out of range, non-numeric, or phone string is too long
-        la $a0, table_not_found_message
+        la $a0, table_start_not_found_message
         jal print_str_mmio
 
         lw   $ra, 0($sp)
@@ -175,9 +177,9 @@ table_not_found:
         jr   $ra
 
 
-table_occupied:
+table_start_occupied:
         # Table is already in service
-        la $a0, table_occupied_message
+        la $a0, table_start_occupied_message
         jal print_str_mmio
 
         lw   $ra, 0($sp)

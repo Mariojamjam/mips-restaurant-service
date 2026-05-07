@@ -22,7 +22,7 @@
 
         #Restoring the return address and closing the stack before returning
         lw   $ra, 0($sp)
-        addi $sp, $sp, 4
+        addi $sp, $sp, 8
         jr   $ra
 .end_macro 
 
@@ -51,7 +51,7 @@
 
 table_rm_item:
 	#Opening stack space to preserve the return address across multiple function calls
-        addi $sp, $sp, -4
+        addi $sp, $sp, -8
         sw   $ra, 0($sp)
 
         #Preparing the arguments for the function parser
@@ -78,6 +78,7 @@ table_rm_item:
 	
 	#Saving the table number in a temporary record.
 	move $t1, $v0     
+	sw $t1, 4($sp)
 
 	#Preparing the table ID string to be converted from ASCII to integer
 	move $a0, $t9
@@ -85,7 +86,8 @@ table_rm_item:
 	
 	#Saving the desired menu item number from the table in a temporary record
 	move $t2, $v0      
-
+	lw $t1, 4($sp)
+	
 	#Loading the minimum and maximum valid menu item ids 
         li $t6, 1
         li $t7, 15
@@ -118,7 +120,7 @@ table_rm_item:
         bgt $t2, $t7, invalid_item_code
 
         #Preparing the menu item id as an argument to get its address in the menu array
-        move $a0, $t6
+        move $a0, $t1
         move $a1, $t2
         jal get_table_item_addr 
         

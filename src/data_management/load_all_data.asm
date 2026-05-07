@@ -32,8 +32,9 @@ load_all_data:
         #Stack layout:
         #       0($sp): saved $ra
         #       4($sp): file descriptor
-        addi $sp, $sp, -8
+        addi $sp, $sp, -12
         sw   $ra, 0($sp)
+        sw $a2, 8($sp)
 
         #Opening the save file in read mode
         #Syscall 13 receives:
@@ -131,15 +132,20 @@ load_all_data:
         lw   $a0, 4($sp)
         syscall
 
+	li $t8, 1
+	lw $a2, 8($sp)
+	beq $a2, $t8, restore_stack
+	
         #Printing the success message after loading all data
         la   $a0, load_success_message
         jal  print_str_mmio
 
+restore_stack:
         #Restoring the return address from the stack
         lw   $ra, 0($sp)
 
         #Closing the stack space used by this function
-        addi $sp, $sp, 8
+        addi $sp, $sp, 12
 
         #Returning to the caller
         jr   $ra
@@ -154,15 +160,13 @@ load_close_error:
 
 
 load_error:
+	#If boot mode requested silent loading, return without printing messages
+	li $t8, 1
+	lw $a2, 8($sp)
+	beq $a2, $t8, restore_stack
+
         #Printing the generic load error message
         la   $a0, load_error_message
         jal  print_str_mmio
 
-        #Restoring the return address from the stack
-        lw   $ra, 0($sp)
-
-        #Closing the stack space used by this function
-        addi $sp, $sp, 8
-
-        #Returning to the caller
-        jr   $ra
+        j restore_stack
