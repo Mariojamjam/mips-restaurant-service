@@ -14,6 +14,7 @@
 	pt_order_add: .asciiz "order_add"
 	pt_partial_table: .asciiz "partial_table"
 	pt_table_format: .asciiz "table_format"
+	pt_table_close: .asciiz "table_close"
 	pt_table_pay: .asciiz "table_pay"
 	pt_table_rm_item: .asciiz "table_rm_item"
 	pt_save_all_data: .asciiz "save_all_data"
@@ -38,6 +39,7 @@ commands_table:
 	.word pt_order_add, order_add, 9
 	.word pt_partial_table, partial_table, 13
 	.word pt_table_format, table_format, 12
+	.word pt_table_close, table_close, 11
 	.word pt_table_pay, table_pay, 9
 	.word pt_table_rm_item,table_rm_item, 13 
 	.word pt_save_all_data, save_all_data, 13
