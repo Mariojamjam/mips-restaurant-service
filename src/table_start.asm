@@ -76,12 +76,9 @@ table_start:
         move $t0, $v0
         sw   $t0, 4($sp)
 
-        # Calculating the table base address: tables + (table_number - 1) * TABLE_SIZE
-        addi $t1, $t0, -1       # convert to zero-based index
-        li   $t2, TABLE_SIZE
-        mul  $t1, $t1, $t2      # byte offset of the target table
-        la   $t3, tables
-        add  $t3, $t3, $t1      # final address of the target table
+        move $a0, $t0           # pass table number as argument
+	jal  get_table_addr     # calculate base address of the target table
+	move $t3, $v0           # store resulting table address in $t3
 
         # Saving the table base address on the stack
         move $t4, $t3
