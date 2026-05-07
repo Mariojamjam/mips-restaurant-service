@@ -1,9 +1,9 @@
 .data
 	table_closed_successfully: .asciiz "Table closed successfully"
-	invalid_table_code: .asciiz "Non-existent table"
-	outstanding_balance: .asciiz "Payment not yet settled. Remaining value: R$ "
-	invalid_command_format: .asciiz "The parser detected an invalid format"
-	table_not_occupied: .asciiz "The selected table is unoccupied"
+	invalid_table_code: .asciiz "Failed: table does not exist"
+	outstanding_balance: .asciiz "Failed: outstanding balance not yet settled. Remaining value: R$ "
+	invalid_command_format: .asciiz "Invalid command"
+	table_not_occupied: .asciiz "Failed: table did not start service"
 	comma: .asciiz ","
 	zero_string: .asciiz "0"
 .macro print_message %reg
@@ -21,10 +21,10 @@
         la   $a0, %reg
         jal  print_str_mmio
 
-        #Restoring preserved registers and closing the stack before returning
+	#Restoring preserved registers and closing the stack before returning
 	lw   $s0, 4($sp)
 	lw   $ra, 0($sp)
-	addi $sp, $sp, 8
+	addi $sp, $sp, 12
 	jr   $ra
 .end_macro 
 
@@ -32,7 +32,7 @@
 
 table_close:
 	#Opening stack space to preserve the return address across multiple function calls
-        addi $sp, $sp, -8
+        addi $sp, $sp, -12
 	sw $ra, 0($sp)
 	sw $s0, 4($sp)
 
@@ -47,7 +47,7 @@ table_close:
         jal function_parser
 
         #If the parser returns a value different from 0, the command format is invalid
-        bne $v0, $0, invalid_format
+        bne $v0, $0, table_close_invalid_format
 
         #Loading the address of the analyzed arguments
 	#The argument represents the table you want to close
@@ -62,13 +62,13 @@ table_close:
 
 	#Loading the minimum and maximum valid tables number
         li $t6, 1
-        li $t7, 15
+        li $t7, 10
 
         #If the converted id is smaller than 1, the id is invalid
-        blt $t1, $t6, invalid_table
+        blt $t1, $t6, table_close_invalid_table
 
         #If the converted id is greater than 15, the id is invalid
-        bgt $t1, $t7, invalid_table
+        bgt $t1, $t7, table_close_invalid_table
         
         #preparing the table ID (code) as an argument to get its address on the table array
         move $a0, $t1
@@ -76,10 +76,14 @@ table_close:
 
 	#Saving the table address in a temporary record
 	move $t2, $v0
+
+	#Checking if the table is registered
+	lw $t3, TABLE_ID($t2)
+        beq $t3, $0, table_close_invalid_table
 	
 	#Loading the current table status
 	lw $t3, TABLE_STATUS($t2)
-	beq $t3, $0, empty_table
+        beq $t3, $0, table_close_empty_table
 
 	#Loading the accumulated table total
 	lw $t4, TABLE_TOTAL($t2)
@@ -94,7 +98,8 @@ table_close:
 	#the table cannot be closed yet
 	bgtz $t6, incomplete_payment
 	
-	#Resetting the table status to indicate that it is now unoccupied
+	#Resetting the table id and status to indicate that it is now unoccupied
+	sw $0, TABLE_ID($t2)
 	sw $0, TABLE_STATUS($t2)
 	
 	#Clearing the accumulated table total
@@ -102,6 +107,26 @@ table_close:
 	
 	#Clearing the accumulated paid amount
 	sw $0, TABLE_PAID($t2)
+
+	#Clearing the responsible name (32 bytes = 8 words)
+	addi $t7, $t2, TABLE_RESP
+	li   $t8, 8
+
+close_clear_resp:
+	sw   $0, 0($t7)
+	addi $t7, $t7, 4
+	addi $t8, $t8, -1
+	bgt  $t8, $0, close_clear_resp
+
+	#Clearing the phone (16 bytes = 4 words)
+	addi $t7, $t2, TABLE_PHONE
+	li   $t8, 4
+
+close_clear_phone:
+	sw   $0, 0($t7)
+	addi $t7, $t7, 4
+	addi $t8, $t8, -1
+	bgt  $t8, $0, close_clear_phone
 	
 	#Initializing the loop counter used to iterate through all order item slots
 	li $s0, 0
@@ -116,11 +141,11 @@ close_loop:
     	addi $a1, $s0, 1
     	jal get_table_item_addr
 
+	#Clearing the id stored in the current ORDER_ITEM slot
+	sw $0, ORDER_ITEM_ID($v0)
+
 	#Clearing the quantity stored in the current ORDER_ITEM slot
     	sw $0, ORDER_ITEM_QUANTITY($v0)
-    	
-    	#Clearing the accumulated total value stored in the current ORDER_ITEM slot
-    	sw $0, ORDER_ITEM_TOTAL($v0)
 
 	#Advancing to the next ORDER_ITEM slot
     	addi $s0, $s0, 1
@@ -145,6 +170,7 @@ incomplete_payment:
 
 	#Moving the decimal currency portion from HI
 	mfhi $t8
+	sw   $t8, 8($sp)
 
 	#Converting the integer portion to string
 	move $a0, $t7
@@ -171,6 +197,9 @@ print_zeros:
     	j continue_cents
     	
 continue_cents:
+	#Reloading the cents portion because previous jal calls may overwrite $t8
+	lw   $t8, 8($sp)
+
 	#Converting the cents portion to string
     	move $a0, $t8
     	jal int_to_string
@@ -182,15 +211,15 @@ continue_cents:
 	#Restoring the return address and closing the stack before returning
 	lw $s0, 4($sp)
 	lw $ra, 0($sp)
-	addi $sp, $sp, 8
+	addi $sp, $sp, 12
 	jr $ra
 	
 #Intermediate labels responsible for printing command result messages
 close_done:
 	print_message table_closed_successfully
-invalid_format:
+table_close_invalid_format:
 	print_message invalid_command_format
-invalid_table:
+table_close_invalid_table:
 	print_message invalid_table_code
-empty_table:
+table_close_empty_table:
 	print_message table_not_occupied
