@@ -21,7 +21,7 @@
 .include "strlib/strcmp.asm"
 .include "strlib/strncmp.asm"
 .include "strlib/strcat.asm"
-.include "table/partial_table.asm"
+.include "table/table_start.asm"
 .include "utils/get_table_addr.asm"
 
 main:
