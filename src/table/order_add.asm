@@ -10,6 +10,7 @@
 	full_table: .asciiz "Failed: table can't take more orders"
 	unavailable_table: .asciiz "Failed: table is not available"
 	
+	
 .text
 #This function aims to add a new order to the table array.
 #the expected command input is:
@@ -123,32 +124,30 @@ order_add:
         
 #END OF SECTION
 #Now we have verified that both the table code and the item exist, while properly adding them to the stack.
-#VERIFY IF THE TABLE CAN HAVE MORE ORDERS
 
 ######CHECK IF TABLE HAS STATUS AVAILABLE
 	lw $a0, 12($sp) #loading $a0 with the desired table address, preparing for check status function
 	jal check_table_status
 	move $t9, $v0
 	beq $t9, $zero, error_table_unavailable
-	
-#################################################
 
-	lw $a0, 12($sp) #loading $a0 with the desired table address, preparing for search function
+#verify if the table has any item with the same ID as the one passed
+
+	lw $a0, 12($sp) #loading $a0 with the desired table address
+	lw $a1, 8($sp) #loading with the ID to be verified
+	jal check_order_rep
+	move $t7, $v0 #to make operations with the return of the function
+	beq $t7, $zero, end_success #if it's 0, then it saved the item in a currently existing order
+	#if it's not 0, then it can either mean it's a full table, or that it has vacant spots
+
+#VERIFY IF THE TABLE CAN HAVE MORE ORDERS
+
+	lw $a0, 12($sp) #loading $a0 with the desired table address, preparing for search function (redundant)
+	lw $a1, 8($sp) #loading with the ID to be verified (redundant)
 	jal search_order #return either with the correct address that is vacant or 0
-	beq $v0, $zero, error_full
-	 
-	move $t1, $v0 #now to save the result of the function (table_pedido address) to the stack
-	sw $t1, 24($sp) #storing the vacant table_pedido that can be used here
+	beq $v0, $zero, end_success
+	j error_full
 	
-#END OF SECTION
-	#is this initilizing right? doesnt seem to be
-	sw ORDER_ITEM_SIZE, TABLE_PEDIDO($t1) #now to load the ordem_item into the vacant address
-
-#ADD ITEM_ID TO ORDER_ITEM_ID	
-	lw $t2,8($sp) #loads the item ID to be stored
-	sw $t2, ORDER_ITEM_ID($t1) #stores the value of the ID in the ORDER_ITEM_ID that has the address of the table
-
-
 
 #generic error when placing the order                
 error_order:
@@ -203,6 +202,14 @@ error_table_unavailable:
         addi $sp, $sp, 24
         jr   $ra
         
-        
+end_success:
+	#Printing the valid command message
+        la $a0, success_msg
+        jal print_str_mmio
+
+        #Restoring the return address and closing the stack before returning
+        lw   $ra, 0($sp)
+        addi $sp, $sp, 24
+        jr   $ra
         
         
