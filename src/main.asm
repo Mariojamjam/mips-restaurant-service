@@ -5,6 +5,7 @@
 .include "utils/function_parser.asm"
 .include "utils/get_table_addr.asm"
 .include "utils/check_table_status.asm"
+.include "utils/check_order_rep"
 .include "utils/search_order.asm"
 .include "menu/menu_add.asm"
 .include "menu/menu_rm.asm"
