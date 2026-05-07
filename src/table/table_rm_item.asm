@@ -16,7 +16,7 @@
 #Expected format:
 #       print_error_message message_label
 
-        #Printing the message that indicates an invalid item code or command format
+        #Printing the message that indicates a specific reaction to a command
         la   $a0, %reg
         jal  print_str_mmio
 
@@ -90,10 +90,10 @@ table_rm_item:
         li $t6, 1
         li $t7, 15
 
-        #If the converted id is smaller than 1, the id is invalid
+        #If the converted table number is less than 1, the table is invalid
         blt $t1, $t6, table_not_found
 
-        #If the converted id is greater than 20, the id is invalid
+        #If the converted table number is greater than 15, the table is invalid
         bgt $t1, $t7, table_not_found
 
 	#Getting selected table base address
@@ -118,7 +118,8 @@ table_rm_item:
         bgt $t2, $t7, invalid_item_code
 
         #Preparing the menu item id as an argument to get its address in the menu array
-        move $a0, $t2
+        move $a0, $t6
+        move $a1, $t2
         jal get_table_item_addr 
         
         #Saving the target menu item address in a temporary register
@@ -126,24 +127,21 @@ table_rm_item:
         
         #Loading the current id stored in the target menu object
         #If the id is 0, the item is not registered in the menu
+        beq $t3, $0, table_item_not_found
         lw $t4, ORDER_ITEM_QUANTITY($t3)
-        beq $t3, $0, item_not_found
+        
+        #If quantity <= 0, item is not listed
+	blez $t4, table_item_not_found
         
         #Remove one unit from the order item and update the memory slot
         addi $t4, $t4, -1
 	sw $t4, ORDER_ITEM_QUANTITY($t3)
 
-table_rm_end:
-        #Printing the success message after the item is removed
-        la   $a0, table_remove_sucess_message
-        jal  print_str_mmio
+#Macros for printing strings using intermediate labels 
 
-        #Restoring the return address and closing the stack before returning
-        lw   $ra, 0($sp)
-        addi $sp, $sp, 4
-        jr   $ra
-       
-	#Macros for printing strings using intermediate labels 
+        #Printing the success message after the item is removed
+	print_error_message table_remove_sucess_message
+	
 invalid_item_code:
 	print_error_message table_invalid_item_code_message
 table_item_not_found:
