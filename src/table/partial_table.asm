@@ -1,12 +1,12 @@
 .data
-        mp_invalid_cmd_msg:    .asciiz "Comando invalido"
-        mp_table_not_found_msg: .asciiz "Falha: mesa inexistente"
-        mp_table_empty_msg:    .asciiz "Falha: mesa nao iniciou atendimento"
+        mp_invalid_cmd_msg:    .asciiz "Invalid command"
+        mp_table_not_found_msg: .asciiz "Failed: table does not exist"
+        mp_table_empty_msg:    .asciiz "Failed: table did not start service"
         mp_item_label:         .asciiz "Item "
         mp_qty_label:          .asciiz " x"
         mp_total_label:        .asciiz "Total: R$ "
-        mp_paid_label:         .asciiz "Pago:  R$ "
-        mp_debt_label:         .asciiz "Saldo devedor: R$ "
+        mp_paid_label:         .asciiz "Paid:  R$ "
+        mp_debt_label:         .asciiz "Outstanding balance: R$ "
         mp_comma:              .asciiz ","
         mp_newline:            .asciiz "\n"
         mp_zero:               .asciiz "0"
@@ -75,6 +75,10 @@ partial_table:
 
         # Saving table base address on the stack
         sw $t3, 8($sp)
+
+        # Checking if the table exists
+        lw $t4, TABLE_ID($t3)
+        beq $t4, $0, mp_table_not_found
 
         # Checking if the table is occupied
         lw $t4, TABLE_STATUS($t3)
@@ -242,7 +246,7 @@ mp_int_print_buf:
 # Input: $a0 = value in centavos
 # -----------------------------
 mp_print_centavos:
-        addi $sp, $sp, -4
+        addi $sp, $sp, -8
         sw   $ra, 0($sp)
 
         move $t0, $a0           # save original value
@@ -251,27 +255,28 @@ mp_print_centavos:
         li   $t1, 100
         div  $t0, $t1
         mflo $a0                # integer part
+        mfhi $t2                # remainder (cents) must be saved before jal calls
+        sw   $t2, 4($sp)
         jal  mp_print_int
 
         # Print comma separator
         la   $a0, mp_comma
         jal  print_str_mmio
 
-        # Print decimal part (centavos % 100), with leading zero if needed
-        mfhi $t2                # remainder (cents)
-
         # If cents < 10, print a leading zero
+        lw   $t2, 4($sp)
         li   $t3, 10
         bge  $t2, $t3, mp_print_cents_normal
         la   $a0, mp_zero
         jal  print_str_mmio
 
 mp_print_cents_normal:
+        lw   $t2, 4($sp)
         move $a0, $t2
         jal  mp_print_int
 
         lw   $ra, 0($sp)
-        addi $sp, $sp, 4
+        addi $sp, $sp, 8
         jr   $ra
 
 

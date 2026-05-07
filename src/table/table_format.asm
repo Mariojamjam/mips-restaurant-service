@@ -1,6 +1,6 @@
 .data
-        table_format_success_message: .asciiz "Todas as mesas foram formatadas com sucesso"
-        table_format_invalid_msg: .asciiz "Comando invalido"
+        table_format_success_message: .asciiz "All tables were cleared successfully"
+        table_format_invalid_msg: .asciiz "Invalid command"
 
 .text
 # This function aims to reset all tables in the system.
